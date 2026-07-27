@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Daxo Eco – Air Quality Dashboard</title>
+    <!-- No external dependencies, pure vanilla JS + CSS -->
+    <style>
+        /* ----- Reset & base styles ----- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f4f7fc;
+            color: #1e293b;
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+        h1 {
+            font-weight: 600;
+            font-size: 2.2rem;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        h1 small {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #64748b;
+            margin-left: 0.5rem;
+        }
+        .subtitle {
+            color: #64748b;
+            margin-bottom: 2rem;
+            border-left: 4px solid #3b82f6;
+            padding-left: 1rem;
+        }
+        .status-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem 2rem;
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            margin-bottom: 2rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .status-item {
+            display: flex;
+            align-items: baseline;
+            gap: 0.4rem;
+        }
+        .status-item .label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #94a3b8;
+        }
+        .status-item .value {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .badge {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .badge.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .badge.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* ----- Cards grid ----- */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            transition: transform 0.1s ease, box-shadow 0.2s;
+            border: 1px solid #e9eef3;
+        }
+        .card:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        }
+        .card .timestamp {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+            font-variant-numeric: tabular-nums;
+        }
+        .card .value-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin: 0.4rem 0;
+        }
+        .card .value-row .label {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        .card .value-row .number {
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+        .card .value-row .number.pm25 {
+            color: #2563eb;
+        }
+        .card .value-row .number.temp {
+            color: #dc2626;
+        }
+        .card .value-row .number.hum {
+            color: #0891b2;
+        }
+        .card .coordinates {
+            font-size: 0.85rem;
+            color: #475569;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #eef2f6;
+        }
+        .card .signature-status {
+            margin-top: 0.6rem;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .card .signature-status .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+        }
+        .card .signature-status .dot.invalid {
+            background: #ef4444;
+        }
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #94a3b8;
+        }
+        .map-container {
+            margin-top: 2rem;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            background: #e9eef3;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }
+        .map-container iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+        footer {
+            margin-top: 3rem;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            text-align: center;
+        }
+        @media (max-width: 640px) {
+            h1 { font-size: 1.6rem; flex-wrap: wrap; }
+            .status-bar { flex-direction: column; align-items: stretch; }
+            .cards-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>
+        🌿 Daxo Eco
+        <small>Air Quality · Trusted Data</small>
+    </h1>
+    <div class="subtitle">
+        Real‑time measurements signed with Ed25519 &amp; protected against replay attacks
+    </div>
+
+    <!-- Status bar -->
+    <div class="status-bar" id="statusBar">
+        <div class="status-item">
+            <span class="label">🟢 Last update</span>
+            <span class="value" id="lastUpdate">—</span>
+        </div>
+        <div class="status-item">
+            <span class="label">📦 Total measurements</span>
+            <span class="value" id="totalCount">0</span>
+        </div>
+        <div class="status-item">
+            <span class="label">⏱️ Refresh interval</span>
+            <span class="value">3s</span>
+        </div>
+        <div>
+            <span class="badge success" id="statusBadge">● Online</span>
+        </div>
+    </div>
+
+    <!-- Cards container -->
+    <div id="cardsContainer" class="cards-grid">
+        <div class="loading">⏳ Loading measurements…</div>
+    </div>
+
+    <!-- Mini map (OpenStreetMap) -->
+    <div class="map-container" id="mapContainer">
+        <span>📍 Map will appear when coordinates are available</span>
+    </div>
+
+    <footer>
+        Daxo Eco v3.0 — Built with Rust, Actix‑web, Postcard &amp; Ed25519
+    </footer>
+</div>
+
+<script>
+    (function() {
+        'use strict';
+
+        // ----- Configuration -----
+        const API_URL = '/api/latest';
+        const REFRESH_INTERVAL_MS = 3000;   // 3 seconds
+        const MAX_CARDS = 20;               // show only the latest N
+
+        // ----- DOM references -----
+        const container = document.getElementById('cardsContainer');
+        const lastUpdateEl = document.getElementById('lastUpdate');
+        const totalCountEl = document.getElementById('totalCount');
+        const mapContainer = document.getElementById('mapContainer');
+
+        // ----- Helper: format timestamp (ISO -> local time) -----
+        function formatTime(iso) {
+            if (!iso) return '—';
+            const d = new Date(iso);
+            return d.toLocaleString('en-US', {
+                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+        }
+
+        // ----- Helper: shorten public key for display -----
+        function shortPubKey(hex) {
+            if (!hex || hex.length < 16) return '—';
+            return hex.slice(0, 8) + '…' + hex.slice(-8);
+        }
+
+        // ----- Render a single card -----
+        function renderCard(item) {
+            const data = item.data || {};
+            const pubKeyHex = item.public_key ? Array.from(item.public_key).map(b => b.toString(16).padStart(2, '0')).join('') : '';
+            const signatureHex = item.signature ? Array.from(item.signature).map(b => b.toString(16).padStart(2, '0')).join('') : '';
+
+            const card = document.createElement('div');
+            card.className = 'card';
+
+            // Timestamp
+            const ts = document.createElement('div');
+            ts.className = 'timestamp';
+            ts.textContent = `🕒 ${formatTime(data.timestamp)}  ·  seq #${data.sequence_id ?? '—'}`;
+            card.appendChild(ts);
+
+            // PM2.5
+            const pmRow = document.createElement('div');
+            pmRow.className = 'value-row';
+            pmRow.innerHTML = `
+                <span class="label">🌫️ PM2.5</span>
+                <span class="number pm25">${data.pm25?.toFixed(1) ?? '—'} µg/m³</span>
+            `;
+            card.appendChild(pmRow);
+
+            // Temperature & Humidity
+            const envRow = document.createElement('div');
+            envRow.className = 'value-row';
+            envRow.innerHTML = `
+                <span class="label">🌡️ Temp</span>
+                <span class="number temp">${data.temperature?.toFixed(1) ?? '—'} °C</span>
+                <span class="label" style="margin-left:1rem;">💧 Humidity</span>
+                <span class="number hum">${data.humidity?.toFixed(1) ?? '—'} %</span>
+            `;
+            card.appendChild(envRow);
+
+            // Coordinates
+            const coords = document.createElement('div');
+            coords.className = 'coordinates';
+            coords.textContent = `📍 ${data.latitude ?? '—'}, ${data.longitude ?? '—'}`;
+            card.appendChild(coords);
+
+            // Signature status (always valid because server verifies)
+            const sigStatus = document.createElement('div');
+            sigStatus.className = 'signature-status';
+            const dot = document.createElement('span');
+            dot.className = 'dot';
+            sigStatus.appendChild(dot);
+            sigStatus.appendChild(document.createTextNode(
+                ` Ed25519 signature verified  ·  Public key: ${shortPubKey(pubKeyHex)}`
+            ));
+            card.appendChild(sigStatus);
+
+            return card;
+        }
+
+        // ----- Update the UI with new data -----
+        function updateDashboard(data) {
+            // data is expected to be an array of StoredMeasurement objects
+            if (!Array.isArray(data) || data.length === 0) {
+                container.innerHTML = `<div class="loading">📭 No data yet. Waiting for the first measurement…</div>`;
+                totalCountEl.textContent = '0';
+                lastUpdateEl.textContent = '—';
+                return;
+            }
+
+            // Update counters
+            totalCountEl.textContent = data.length;
+            const latest = data[data.length - 1];
+            if (latest && latest.data && latest.data.timestamp) {
+                lastUpdateEl.textContent = formatTime(latest.data.timestamp);
+            } else {
+                lastUpdateEl.textContent = '—';
+            }
+
+            // Show only the last MAX_CARDS items (newest first for readability)
+            const displayData = data.slice(-MAX_CARDS).reverse();
+
+            // Clear container
+            container.innerHTML = '';
+
+            // Render each card
+            displayData.forEach(item => {
+                const card = renderCard(item);
+                container.appendChild(card);
+            });
+
+            // Update map if we have coordinates
+            const lastWithCoords = data.findLast(d => d.data && d.data.latitude && d.data.longitude);
+            if (lastWithCoords && lastWithCoords.data) {
+                const { latitude, longitude } = lastWithCoords.data;
+                mapContainer.innerHTML = `
+                    <iframe
+                        src="https://www.openstreetmap.org/export/embed.html?bbox=${longitude-0.01},${latitude-0.01},${longitude+0.01},${latitude+0.01}&layer=mapnik&marker=${latitude},${longitude}"
+                        allowfullscreen
+                        loading="lazy"
+                    ></iframe>
+                `;
+            } else {
+                mapContainer.innerHTML = `<span>📍 Waiting for coordinates…</span>`;
+            }
+        }
+
+        // ----- Fetch data from server -----
+        async function fetchData() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const json = await response.json();
+                updateDashboard(json);
+                document.getElementById('statusBadge').textContent = '● Online';
+                document.getElementById('statusBadge').className = 'badge success';
+            } catch (error) {
+                console.error('Fetch error:', error);
+                document.getElementById('statusBadge').textContent = '● Offline';
+                document.getElementById('statusBadge').className = 'badge error';
+                container.innerHTML = `<div class="loading">⚠️ Cannot connect to server. Retrying…</div>`;
+            }
+        }
+
+        // ----- Start periodic refresh -----
+        // Initial fetch
+        fetchData();
+
+        // Set interval
+        setInterval(fetchData, REFRESH_INTERVAL_MS);
+    })();
+</script>
+</body>
+</html>

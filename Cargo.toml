@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "daxo-eco-core",
+    "daxo-eco-node",
+    "daxo-eco-server",
+]
+resolver = "2"

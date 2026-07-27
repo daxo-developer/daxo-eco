@@ -1,0 +1,18 @@
+[package]
+name = "daxo-eco-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+ed25519-dalek = { version = "2.0", default-features = false, features = ["alloc", "rand_core"] }
+hex = { version = "0.4", default-features = false, features = ["alloc"] }
+postcard = { version = "1.0", default-features = false, features = ["alloc"] }
+rand_core = { version = "0.6", default-features = false, features = ["getrandom"], optional = true }
+
+[features]
+default = ["std"]
+std = ["serde/std", "ed25519-dalek/std", "postcard/use-std", "rand_core"]
+
+[dev-dependencies]
+serde_json = "1.0"

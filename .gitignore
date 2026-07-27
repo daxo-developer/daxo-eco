@@ -1,0 +1,4 @@
+/target
+**/*.rs.bk
+daxo-eco-node/seq_state.bin
+.DS_Store

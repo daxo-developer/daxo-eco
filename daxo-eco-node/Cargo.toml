@@ -1,0 +1,15 @@
+[package]
+name = "daxo-eco-node"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+daxo-eco-core = { path = "../daxo-eco-core", features = ["std"] }
+reqwest = { version = "0.11", features = ["blocking"] }   # for binary payload
+rand = "0.8"
+tokio = { version = "1.0", features = ["full"] }
+chrono = "0.4"
+serde = "1.0"
+postcard = { version = "1.0", default-features = false, features = ["alloc"] }
+hex = "0.4"
+anyhow = "1.0"
